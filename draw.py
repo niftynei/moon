@@ -23,7 +23,7 @@ def getMinus(R,r,s):
 
 def getPos():
     lat, lon =  getLatLong()
-    results = subprocess.check_output(['./moon_project',lat,lon])
+    results = subprocess.check_output(['./moon_project_arm',lat,lon])
     inputs = results.split()
     output = {}
     output['R'] = int(float(inputs[0][1:]))
