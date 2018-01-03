@@ -7,19 +7,31 @@ import random
 import time
 import numpy as np
 import scipy.misc as misc
-from rgbmatrix import Adafruit_RGBmatrix
+from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-matrix = Adafruit_RGBmatrix(32, 1)
+options = RGBMatrixOptions()
+options.rows = 32
+options.chain_length = 1
+options.parallel = 1
+options.hardware_mapping = 'adafruit-hat-pwm'
+options.pwm_bits = 8 
+options.scan_mode = 0
+options.gpio_slowdown = 1
+options.pwm_lsb_nanoseconds = 260
+#options.show_refresh_rate = 1
+#options.daemon = 1
+
+matrix = RGBMatrix(options = options)
 
 radius = 14 * 10
 start = 160 - radius
 diameter = radius * 2
 color = (88,88,88)
 dimen = 320
-#moonColors = [(244,55,0),(86,149,86),(86,0,86),(227,55,108),(227,219,129),(0,108,129),(255,108,23),(255,196,23),(255,196,196),(101,196,196),(101,0,71),(206,0,71)]
-moonColors = [(255,196,196)]
+#moonColors = [(255,196,23),(255,216,99)]
+moonColors = [(255,196,23)]
 
 illumArr = 0
 
@@ -84,17 +96,16 @@ def drawMoon(img, draw, illum, R, theta):
     r = radius
     s = R - math.sqrt(R * R - r * r)
 
-    plus = illum >= .5
     if (illum == .5):
         draw.pieslice((start,start,diameter+start,diameter+start),-180,0, fill=color)
     elif (illum <= 0.01):
         # don't show anything - new moon
         pass
-    elif (illum >= .99):
+    elif (illum >= .996):
         #full moon!
         fullColor = pickFullMoonColor()
         draw.pieslice((start,start,diameter+start,diameter+start),-180,180, fill=fullColor)
-    elif (plus):
+    elif (illum > .50):
         coords = getPlus(R,r,s)
         crescent = Image.new('RGB', (dimen, dimen), 'black')
         dc = ImageDraw.Draw(crescent)
@@ -106,6 +117,7 @@ def drawMoon(img, draw, illum, R, theta):
         cy1 = int(r+s) + start
         cres = crescent.crop((cx0,cy0,cx1,cy1))
         img.paste(cres, (cx0,cy0,cx1,cy1))
+        draw.pieslice((start,start,diameter+start,diameter+start),-180,0, fill=color)
     else:
         draw.pieslice((start,start,diameter+start,diameter+start),-180,0, fill=color)
         coords = getMinus(R,r,s)
@@ -122,39 +134,39 @@ def getDownscaledImg(img):
 
 
 def runStart():
-    img = Image.new('RGB', (dimen,dimen), 'black')
-    draw = ImageDraw.Draw(img)
-    for i in range(0,101):
+    for i in range(0,99):
+        img = Image.new('RGB', (dimen,dimen), 'black')
+        draw = ImageDraw.Draw(img)
         illum = float(i) / 100
         theta, R = getCircleVals(illum)
-        img = drawMoon(img, draw, illum, R, theta)
+        drawMoon(img, draw, illum, R, theta)
 
         # rotate just 90deg for intro
         rotated = img.rotate(90)
         downscaled = getDownscaledImg(rotated)
 
         matrix.Clear()
-        matrix.SetImage(downscaled.im.id, 0, 0)
+        matrix.SetImage(downscaled, 0,0)
 
-        time.sleep(.7)
+        time.sleep(.03)
 
 
 def runMoonClock():
-    img = Image.new('RGB', (dimen,dimen), 'black')
-    draw = ImageDraw.Draw(img)
-
     while True:
+        img = Image.new('RGB', (dimen,dimen), 'black')
+        draw = ImageDraw.Draw(img)
+
         illum, posAng = getPos()
         theta, R = getCircleVals(illum)
-        img = drawMoon(img, draw, illum, R, theta)
+        drawMoon(img, draw, illum, R, theta)
 
         rotated = img.rotate(posAng)
-
         downscaled = getDownscaledImg(rotated)
-        matrix.Clear()
-        matrix.SetImage(downscaled.im.id, 0, 0)
 
-        time.sleep(5 * 60)
+        matrix.Clear()
+        matrix.SetImage(downscaled, 0,0)
+
+        time.sleep(5)
 
 def testMoonColors():
     img = Image.new('RGB', (dimen,dimen), 'black')
@@ -165,13 +177,12 @@ def testMoonColors():
 
         downscaled = getDownscaledImg(img)
         matrix.Clear()
-        matrix.SetImage(downscaled.im.id, 0, 0)
+        matrix.SetImage(downscaled, 0,0)
 
         time.sleep(2)
 
 
 #testMoonColors()
-matrix.Clear()
 runStart()
 matrix.Clear()
 runMoonClock()
