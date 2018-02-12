@@ -16,6 +16,7 @@ options.rows = 32
 options.chain_length = 1
 options.parallel = 1
 options.hardware_mapping = 'adafruit-hat-pwm'
+options.multiplexing=1
 options.pwm_bits = 8 
 options.scan_mode = 0
 options.gpio_slowdown = 1
