@@ -1,0 +1,13 @@
+[Unit]
+Description=Moon Clock (ticktock)
+
+[Service]
+Type=idle
+WorkingDirectory=/home/pi/dev/moon
+ExecStart=/usr/bin/python moondraw.py
+Restart=always
+RestartSec=2
+RuntimeMaxSec=infinity
+
+[Install]
+WantedBy=multi-user.target
