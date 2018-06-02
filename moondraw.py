@@ -98,7 +98,6 @@ def pickFullMoonColor():
 
 
 def drawMoon(img, draw, illum, R, theta):
-    R = R * 10
     ang = theta / 2.0
     r = radius
     s = R - math.sqrt(R * R - r * r)

@@ -1,5 +1,6 @@
 from PIL import Image
 from PIL import ImageDraw
+import datetime
 import math
 import time
 import subprocess
@@ -7,8 +8,8 @@ import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-radius=14*10
-start=2*10
+radius=12*10 
+start=160 - radius
 diameter=radius * 2
 
 def loadIllum():
@@ -50,25 +51,30 @@ def getMinus(R,r,s):
     x1 = r + R + start
     return (x0,y0,x1,y1)
 
-def getPos():
+def getTimeNow():
+    return datetime.datetime.now().strftime("%s")
+
+def getPos(at):
     lat, lon =  getLatLong()
-    #results = subprocess.check_output(['./moon_project_arm',lat,lon])
-    results = subprocess.check_output([dir_path + '/moon_project',lat,lon])
+    results = subprocess.check_output([dir_path + '/moon_project',lat,lon,at])
     inputs = results.split()
     output = {}
-    output['posAng'] = float(inputs[0][1:])
-    output['illum'] = float(inputs[1][1:])
+    output['posAng'] = float(inputs[1])
+    output['illum'] = float(inputs[0])
     return output
 
 img = Image.new('RGB', (320,320), 'black')
 draw =  ImageDraw.Draw(img)
 illVals = loadIllum()
 
-info = getPos()
-info['illum'] = float(i) / 100
+factor = .53
+info = getPos(str(int(((2531040) * factor + 1528893780))))
+
+print (info['illum'], factor)
+
 vals = getCircleVals(info['illum'], illVals)
 
-R = vals['R'] * 10
+R = vals['R']
 ang = vals['theta'] / 2.0
 r = radius
 s = R - math.sqrt(R * R - r * r)
