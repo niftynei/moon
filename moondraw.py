@@ -5,6 +5,7 @@ import subprocess
 import os
 import random
 import time
+import datetime
 import numpy as np
 import scipy.misc as misc
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
@@ -24,9 +25,11 @@ options.pwm_lsb_nanoseconds = 260
 #options.show_refresh_rate = 1
 #options.daemon = 1
 
+runthrough_min = 10
+
 matrix = RGBMatrix(options = options)
 
-radius = 14 * 10
+radius = 12 * 10
 start = 160 - radius
 diameter = radius * 2
 color = (88,88,88)
@@ -78,9 +81,12 @@ def getMinus(R,r,s):
     x1 = r + R + start
     return (x0,y0,x1,y1)
 
-def getPos():
+def getTimeNow():
+    return datetime.datetime.now().strftime("%s")
+
+def getPos(at):
     lat, lon =  getLatLong()
-    results = subprocess.check_output([dir_path + '/moon_project_arm',lat,lon])
+    results = subprocess.check_output([dir_path + '/moon_project_arm',lat,lon,at])
     inputs = results.split()
     posAngle = float(inputs[0][1:])
     illum = float(inputs[1][1:])
@@ -157,7 +163,7 @@ def runMoonClock():
         img = Image.new('RGB', (dimen,dimen), 'black')
         draw = ImageDraw.Draw(img)
 
-        illum, posAng = getPos()
+        illum, posAng = getPos(getTimeNow())
         theta, R = getCircleVals(illum)
         drawMoon(img, draw, illum, R, theta)
 
@@ -168,6 +174,32 @@ def runMoonClock():
         matrix.SetImage(downscaled, 0,0)
 
         time.sleep(5)
+
+def runMoonClockQuick():
+    startTimestamp = 1528893780 # June 13, 2018 12:43pm. New Moon
+    endTimestamp = 1531424820 # July 12, 2018 7:47pm. New Moon
+    step = (endTimestamp - startTimestamp) / (runthrough_min * 60) 
+    time_is = startTimestamp
+    while True:
+        if time_is >= endTimestamp:
+            time_is = startTimestamp
+
+        img = Image.new('RGB', (dimen,dimen), 'black')
+        draw = ImageDraw.Draw(img)
+
+        illum, posAng = getPos(time_is)
+        theta, R = getCircleVals(illum)
+        drawMoon(img, draw, illum, R, theta)
+
+        rotated = img.rotate(posAng)
+        downscaled = getDownscaledImg(rotated)
+
+        matrix.Clear()
+        matrix.SetImage(downscaled, 0,0)
+
+        time.sleep(1)
+        time_is += step
+
 
 def testMoonColors():
     img = Image.new('RGB', (dimen,dimen), 'black')
@@ -186,6 +218,7 @@ def testMoonColors():
 #testMoonColors()
 runStart()
 matrix.Clear()
-runMoonClock()
+runMoonClockQuick()
+#runMoonClock()
 
 matrix.Clear()
